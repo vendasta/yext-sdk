@@ -73,6 +73,26 @@ func (e Errors) Warnings() []*Error {
 	return warnings
 }
 
+// GetNumErrors returns the number of errors (warnings are excluded)
+func GetNumErrors(err error) int {
+	if err == nil {
+		return 0
+	}
+
+	if e, ok := err.(Errors); ok {
+		return len(e.Errors())
+	}
+
+	if e, ok := err.(Error); ok {
+		if e.IsError() {
+			return 1
+		}
+		return 0
+	}
+
+	return 1
+}
+
 //ToUserFriendlyMessage Will return a string describing the error that can be displayed to end users
 func ToUserFriendlyMessage(err error) string {
 	var message string
