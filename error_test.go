@@ -172,3 +172,103 @@ func TestToUserFriendlyMessage(t *testing.T) {
 		})
 	}
 }
+
+func TestGetNumErrors(t *testing.T) {
+	type args struct {
+		err error
+	}
+	tests := []struct {
+		name string
+		args args
+		want int
+	}{
+		{
+			name: "Nil error should return count of 0",
+			args: args{err: nil},
+			want: 0,
+		},
+		{
+			name: "Generic non yext error should count of 1",
+			args: args{err: errors.New("Generic GO error")},
+			want: 1,
+		},
+		{
+			name: "yext sdk error type of warning should return count of 0",
+			args: args{err: Error{
+				Type: ErrorTypeWarning,
+			}},
+			want: 0,
+		},
+
+		{
+			name: "yext sdk error type of Fatal should return count of 1",
+			args: args{err: Error{
+				Type: ErrorTypeFatal,
+			}},
+			want: 1,
+		},
+		{
+			name: "yext sdk error type of non_fatal should return count of 1",
+			args: args{err: Error{
+				Type: ErrorTypeNonFatal,
+			}},
+			want: 1,
+		},
+		// Fixme: Should we handle error object without type? Not currently handled
+		// by yext sdk
+		// {
+		// 	name: "yext sdk empty error object should return???",
+		// 	args: args{err: Error{
+		//
+		// 	}},
+		// 	want: 0,
+		// },
+
+		{name: "Error list with multiple error should only return non-warnings errors count",
+			args: args{err: Errors{
+				&Error{
+					Message:     "test",
+					Code:        0,
+					Type:        ErrorTypeWarning,
+					RequestUUID: "testing-UUID",
+				},
+				&Error{
+					Message:     "message 2",
+					Code:        0,
+					Type:        ErrorTypeNonFatal,
+					RequestUUID: "testing-UUID",
+				},
+			}},
+			want: 1,
+		},
+		{name: "Error list with only warnings should return count of 0",
+			args: args{err: Errors{
+				&Error{
+					Message:     "test",
+					Code:        0,
+					Type:        ErrorTypeWarning,
+					RequestUUID: "testing-UUID",
+				},
+				&Error{
+					Message:     "message 2",
+					Code:        0,
+					Type:        ErrorTypeWarning,
+					RequestUUID: "testing-UUID",
+				},
+			}},
+			want: 0,
+		},
+		{
+			name: "empty error list should return count of 0",
+			args: args{err: Errors{}},
+			want: 0,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := GetNumErrors(tt.args.err); got != tt.want {
+				t.Errorf("GetNumErrors() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
